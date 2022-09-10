@@ -1,12 +1,14 @@
 from OCC.Extend.DataExchange import read_step_file
 from OCC.Core.Tesselator import ShapeTesselator
+import trimesh
 import numpy as np
 import random
 
 
 class Tesselation:
-    def __init__(self, filepath, outputsize=1024) -> None:
+    def __init__(self, filepath="None", format="step", outputsize=1024) -> None:
         self.filepath = filepath
+        self.format = format
         self.outputsize = outputsize
         self.pc = np.zeros((outputsize, 3))
         self.faces = []
@@ -18,14 +20,25 @@ class Tesselation:
         return self.pc
 
     def __tesselation(self):
-        shape = read_step_file(self.filepath)
-        tess = ShapeTesselator(shape)
-        tess.Compute()
-        for i in range(tess.ObjGetTriangleCount()):
-            idx1, idx2, idx3 = tess.GetTriangleIndex(i)
-            self.faces.append(
-                [tess.GetVertex(idx1), tess.GetVertex(idx2), tess.GetVertex(idx3)]
-            )
+        if self.format == "step":
+            shape = read_step_file(self.filepath)
+            tess = ShapeTesselator(shape)
+            tess.Compute()
+            for i in range(tess.ObjGetTriangleCount()):
+                idx1, idx2, idx3 = tess.GetTriangleIndex(i)
+                self.faces.append(
+                    [tess.GetVertex(idx1), tess.GetVertex(idx2), tess.GetVertex(idx3)]
+                )
+        elif self.format == "obj":
+            mesh = trimesh.load(self.filepath)
+            verts = np.array(mesh.vertices)
+            faces = np.array(mesh.faces)
+            for i in range(len(faces)):
+                self.faces.append(
+                    [verts[faces[i][0]], verts[faces[i][1]], verts[faces[i][2]]]
+                )
+        else:
+            raise Exception(f"format {self.format} not supported")
         self.idxs = [i for i in range(len(self.faces))]
         self.faces = np.array(self.faces)
 
