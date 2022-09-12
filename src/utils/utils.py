@@ -5,3 +5,4 @@ def get_classes(annot):
         if annot[str(i)]["annotation"] not in classes:
             classes[annot[str(i)]["annotation"]] = cnt
             cnt += 1
+    return classes
