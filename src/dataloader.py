@@ -1,11 +1,7 @@
 import os
 import numpy as np
 import math
-import random
-import json
-import torch
-from torchvision import transforms, utils
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset
 
 
 class MechanicalData(Dataset):
