@@ -1,7 +1,9 @@
+from imp import IMP_HOOK
 import os
 import numpy as np
 import math
 from torch.utils.data import Dataset
+import torch
 
 
 class MechanicalData(Dataset):
@@ -26,5 +28,9 @@ class MechanicalData(Dataset):
         pc = self.__preproc__(pc_path)
         return {
             "pointcloud": pc,
-            "category": self.classes[self.annotations[str(idx)]["annotation"]],
+            "category": torch.from_numpy(
+                np.array(self.classes[self.annotations[str(idx)]["annotation"]]).astype(
+                    np.int64
+                )
+            ),
         }
