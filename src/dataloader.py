@@ -4,6 +4,10 @@ import numpy as np
 import math
 from torch.utils.data import Dataset
 import torch
+from torchvision import transforms, utils
+import json
+from utils.utils import get_classes
+from utils.transforms import Normalize, ToTensor, RandRotation_z, RandomNoise
 
 
 class MechanicalData(Dataset):
@@ -34,3 +38,22 @@ class MechanicalData(Dataset):
                 )
             ),
         }
+
+
+def get_dataset(path, set):
+    if set == "train":
+        data_transforms = transforms.Compose(
+            [Normalize(), RandRotation_z(), RandomNoise(), ToTensor()]
+        )
+    elif set == "test":
+        data_transforms = transforms.Compose(
+            [Normalize(), RandRotation_z(), RandomNoise(), ToTensor()]
+        )
+    else:
+        raise Exception(f"not supportet set: {set}")
+    annotations = {}
+    with open(os.path.join(path, f"annot_{set}.json")) as f:
+        annotations = json.load(f)
+    classes = get_classes(annotations)
+    dataset = MechanicalData(path, annotations, classes, data_transforms)
+    return annotations, dataset
