@@ -46,9 +46,7 @@ def get_dataset(path, set):
             [Normalize(), RandRotation_z(), RandomNoise(), ToTensor()]
         )
     elif set == "test":
-        data_transforms = transforms.Compose(
-            [Normalize(), RandRotation_z(), RandomNoise(), ToTensor()]
-        )
+        data_transforms = transforms.Compose([Normalize(), ToTensor()])
     else:
         raise Exception(f"not supportet set: {set}")
     annotations = {}
