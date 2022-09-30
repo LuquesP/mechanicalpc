@@ -24,6 +24,7 @@ epochs = 1
 save = True
 
 for epoch in range(epochs):
+    running_loss = 0.0
     for i, data in enumerate(train_loader, 0):
         points, target = data["pointcloud"], data["category"]
         points = points.transpose(1, 2)
@@ -36,33 +37,38 @@ for epoch in range(epochs):
             loss += feature_transform_regularizer(trans_feat) * 0.001
         loss.backward()
         optimizer.step()
-        pred_choice = pred.data.max(1)[1]
-        correct = pred_choice.eq(target.data).cpu().sum()
-        print(
-            "[%d: %d/%d] train loss: %f accuracy: %f"
-            % (epoch, i, len(train_loader), loss.item(), correct.item() / float(64))
-        )
-        if i % 10 == 0:
-            j, data = next(enumerate(val_loader, 0))
+        # pred_choice = pred.data.max(1)[1]
+        # correct = pred_choice.eq(target.data).cpu().sum()
+        running_loss += loss.item()
+        if i % 10 == 9:
+            metrics = {"train/train_loss": running_loss, "train/epoch": epoch}
+            print(
+                "[Epoch: %d, Batch: %4d / %4d], loss: %.3f"
+                % (epoch + 1, i + 1, len(train_loader), running_loss / 10)
+            )
+            running_loss = 0.0
+            # wandb.log({**metrics})
+    model.eval()
+    correct = total = 0
+    with torch.no_grad():
+        for data in val_loader:
             points, target = data["pointcloud"], data["category"]
             points = points.transpose(1, 2)
             points, target = points.to(device), target.to(device)
-            model = model.eval()
-            pred, _, _ = model(points)
-            loss = F.nll_loss(pred, target)
-            pred_choice = pred.data.max(1)[1]
-            correct = pred_choice.eq(target.data).cpu().sum()
-            print(
-                "[%d: %d/%d] %s loss: %f accuracy: %f"
-                % (
-                    epoch,
-                    i,
-                    num_batch,
-                    ("test"),
-                    loss.item(),
-                    correct.item() / float(64),
-                )
-            )
+            # model = model.eval()
+            outputs, _, _ = model(points)
+            _, pred = torch.max(outputs.data, 1)
+            total += target.size(0)
+            correct += (pred == target).sum().item()
+        val_acc = 100.0 * correct / total
+        # correct = pred_choice.eq(target.data).cpu().sum()
+        # val_metrics = {
+        #     "val/val_loss": loss.item(),
+        #     "val/val_accuracy": (correct.item() / float(64)),
+        # }
+
+        print("Valid accuracy: %d %%" % val_acc)
 
     if save:
         torch.save(model.state_dict(), "%s/cls_model_%d.pth" % (model_outpath, epoch))
+# wandb.finish()
