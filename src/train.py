@@ -1,9 +1,12 @@
 import torch
 from utils.utils import get_classes
-from models.pointnet import PointNetCls, feature_transform_regularizer
+from networks.pointnet.pointnet import PointNetCls, feature_transform_regularizer
 from torch.utils.data import DataLoader
 import torch.nn.functional as F
 from dataloader import get_dataset
+from networks.pointnet2.pointnet2_cls_ssg import get_model, get_loss
+from networks.pct.init_model import pct_get_model
+
 
 dataset_path = r"C:\Users\LukasPilsl\source\studium\bachelor\mechanicalpc\data"
 model_outpath = "mode/"
@@ -16,7 +19,18 @@ train_loader = DataLoader(train_ds, batch_size=64, shuffle=True)
 val_loader = DataLoader(val_ds, batch_size=64)
 
 classes = get_classes(train_annot)
-model = PointNetCls(k=len(classes), feature_transform=True)
+print(len(classes))
+# Pointnet
+model_naem = "pointnet"
+# model = PointNetCls(k=len(classes), feature_transform=True)
+model_name = "pointnet2"
+# Pointnet2
+# model = get_model(len(classes), normal_channel=False)
+# PCT
+model_name = "pct"
+model = pct_get_model()
+
+print(model)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 num_batch = len(train_loader) / 64
 feature_transform = True
@@ -24,51 +38,46 @@ epochs = 1
 save = True
 
 for epoch in range(epochs):
-    running_loss = 0.0
+    total_train_loss = 0
+    correct_examples = 0
     for i, data in enumerate(train_loader, 0):
         points, target = data["pointcloud"], data["category"]
         points = points.transpose(1, 2)
         points, target = points.to(device), target.to(device)
         optimizer.zero_grad()
         model = model.train()
-        pred, trans, trans_feat = model(points)
+        if model_name == "pct":
+            pred = model(points)
+        if model_name == "pointnet":
+            pred, trans, _ = model(points)
+        else:
+            pred, trans = model(points)
         loss = F.nll_loss(pred, target)
-        if feature_transform:
-            loss += feature_transform_regularizer(trans_feat) * 0.001
         loss.backward()
         optimizer.step()
-        # pred_choice = pred.data.max(1)[1]
-        # correct = pred_choice.eq(target.data).cpu().sum()
-        running_loss += loss.item()
+        pred_choice = pred.max(1)[1]
+        total_train_loss += loss.item()
+        correct_examples += pred_choice.eq(target.data).sum().item()
         if i % 10 == 9:
-            metrics = {"train/train_loss": running_loss, "train/epoch": epoch}
             print(
-                "[Epoch: %d, Batch: %4d / %4d], loss: %.3f"
-                % (epoch + 1, i + 1, len(train_loader), running_loss / 10)
+                f"[Epoch {epoch + 1}, Batch: {i + 1 } / {len(train_loader)}], Train loss: {((total_train_loss / len(train_loader))*100.0):.4f}, train accuracy: {(correct_examples) / len(train_ds):.4f}"
             )
-            running_loss = 0.0
-            # wandb.log({**metrics})
+            total_train_loss = 0
+    # wandb.log({**metrics})
     model.eval()
-    correct = total = 0
+    correct = 0
+    total = 0
     with torch.no_grad():
         for data in val_loader:
             points, target = data["pointcloud"], data["category"]
             points = points.transpose(1, 2)
             points, target = points.to(device), target.to(device)
-            # model = model.eval()
             outputs, _, _ = model(points)
             _, pred = torch.max(outputs.data, 1)
             total += target.size(0)
             correct += (pred == target).sum().item()
         val_acc = 100.0 * correct / total
-        # correct = pred_choice.eq(target.data).cpu().sum()
-        # val_metrics = {
-        #     "val/val_loss": loss.item(),
-        #     "val/val_accuracy": (correct.item() / float(64)),
-        # }
-
-        print("Valid accuracy: %d %%" % val_acc)
-
+        print(f"Valid accuracy: {val_acc}")
     if save:
         torch.save(model.state_dict(), "%s/cls_model_%d.pth" % (model_outpath, epoch))
 # wandb.finish()
