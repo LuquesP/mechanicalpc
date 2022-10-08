@@ -495,9 +495,9 @@ def pointMLP(num_classes=68, **kwargs) -> Model:
     )
 
 
-def pointMLPElite(num_classes=40, **kwargs) -> Model:
+def pointMLPElite(num_classes=68, **kwargs) -> Model:
     return Model(
-        points=1024,
+        points=2048,
         class_num=num_classes,
         embed_dim=32,
         groups=1,
