@@ -40,15 +40,12 @@ class MechanicalData(Dataset):
         }
 
 
-def get_dataset(path, set):
-    if set == "train":
+def get_dataset(path, set, augmentations):
+    data_transforms = transforms.Compose([Normalize(), ToTensor()])
+    if augmentations:
         data_transforms = transforms.Compose(
             [Normalize(), RandRotation_z(), RandomNoise(), ToTensor()]
         )
-    elif set == "test":
-        data_transforms = transforms.Compose([Normalize(), ToTensor()])
-    else:
-        raise Exception(f"not supportet set: {set}")
     annotations = {}
     with open(os.path.join(path, f"annot_{set}.json")) as f:
         annotations = json.load(f)
