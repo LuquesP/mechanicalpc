@@ -25,12 +25,12 @@ def set_seed(seed):
 
 
 def weight_init(m, init_type):
-    if init_type == 'xavier':
+    if init_type == "xavier":
         init_func = torch.nn.init.xavier_normal_
-    elif init_type == 'kaiming':
+    elif init_type == "kaiming":
         init_func = torch.nn.init.kaiming_normal_
     else:
-        raise Exception('No such init type')
+        raise Exception("No such init type")
 
     if isinstance(m, (torch.nn.Linear, torch.nn.Conv2d, torch.nn.Conv1d)):
         init_func(m.weight)
@@ -70,7 +70,7 @@ class SmoothClsLoss(nn.Module):
 
 
 def get_model(args):
-    module = importlib.import_module('models.%s' % args.model)
+    module = importlib.import_module("models.%s" % args.model)
     return module.Model(args)
 
 
