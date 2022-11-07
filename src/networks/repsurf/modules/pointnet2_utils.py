@@ -6,10 +6,17 @@ Date: 05/10/2022
 import torch
 
 try:
-    from modules.pointops.functions.pointops import furthestsampling, gathering, ballquery, knnquery, \
-        grouping, interpolation, nearestneighbor
+    from modules.pointops.functions.pointops import (
+        furthestsampling,
+        gathering,
+        ballquery,
+        knnquery,
+        grouping,
+        interpolation,
+        nearestneighbor,
+    )
 except:
-    raise Exception('Failed to load pointops')
+    raise Exception("Failed to load pointops")
 
 
 def square_distance(src, dst):
@@ -20,12 +27,13 @@ def square_distance(src, dst):
     B, N, _ = src.shape
     _, M, _ = dst.shape
     dist = -2 * torch.matmul(src, dst.permute(0, 2, 1))
-    dist += torch.sum(src ** 2, -1).view(B, N, 1)
-    dist += torch.sum(dst ** 2, -1).view(B, 1, M)
+    dist += torch.sum(src**2, -1).view(B, N, 1)
+    dist += torch.sum(dst**2, -1).view(B, 1, M)
     return dist
 
 
 def index_points(points, idx, cuda=False, is_group=False):
+    cuda = False
     if cuda:
         if is_group:
             points = grouping(points.transpose(1, 2).contiguous(), idx)
@@ -39,7 +47,12 @@ def index_points(points, idx, cuda=False, is_group=False):
     view_shape[1:] = [1] * (len(view_shape) - 1)
     repeat_shape = list(idx.shape)
     repeat_shape[0] = 1
-    batch_indices = torch.arange(B, dtype=torch.long).to(device).view(view_shape).repeat(repeat_shape)
+    batch_indices = (
+        torch.arange(B, dtype=torch.long)
+        .to(device)
+        .view(view_shape)
+        .repeat(repeat_shape)
+    )
     new_points = points[batch_indices, idx, :]
     return new_points
 
@@ -55,6 +68,7 @@ def farthest_point_sample(xyz, npoint, cuda=False):
     FLOPs:
         S * (3 + 3 + 2)
     """
+    cuda = False
     if cuda:
         if not xyz.is_contiguous():
             xyz = xyz.contiguous()
@@ -76,6 +90,7 @@ def farthest_point_sample(xyz, npoint, cuda=False):
 
 
 def query_ball_point(radius, nsample, xyz, new_xyz, debug=False, cuda=False):
+    cuda = False
     if cuda:
         if not xyz.is_contiguous():
             xyz = xyz.contiguous()
@@ -85,21 +100,26 @@ def query_ball_point(radius, nsample, xyz, new_xyz, debug=False, cuda=False):
     device = xyz.device
     B, N, C = xyz.shape
     _, S, _ = new_xyz.shape
-    group_idx = torch.arange(N, dtype=torch.long).to(device).view(1, 1, N).repeat([B, S, 1])
+    group_idx = (
+        torch.arange(N, dtype=torch.long).to(device).view(1, 1, N).repeat([B, S, 1])
+    )
     sqrdists = square_distance(new_xyz, xyz)
-    group_idx[sqrdists > radius ** 2] = N
+    group_idx[sqrdists > radius**2] = N
     group_idx = group_idx.sort(dim=-1)[0][:, :, :nsample]
     group_first = group_idx[:, :, 0].view(B, S, 1).repeat([1, 1, nsample])
     mask = group_idx == N
     group_idx[mask] = group_first[mask]
     if debug:
         num_miss = torch.sum(mask)
-        num_over = torch.sum(torch.clamp(torch.sum(sqrdists < radius ** 2, dim=2) - nsample, min=0))
+        num_over = torch.sum(
+            torch.clamp(torch.sum(sqrdists < radius**2, dim=2) - nsample, min=0)
+        )
         return num_miss, num_over
     return group_idx
 
 
 def query_knn_point(k, xyz, new_xyz, cuda=False):
+    cuda = False
     if cuda:
         if not xyz.is_contiguous():
             xyz = xyz.contiguous()
@@ -112,6 +132,7 @@ def query_knn_point(k, xyz, new_xyz, cuda=False):
 
 
 def sample(nsample, feature, cuda=False):
+    cuda = False
     feature = feature.permute(0, 2, 1)
     xyz = feature[:, :, :3]
 
