@@ -6,7 +6,7 @@ Date: 05/10/2022
 import torch
 
 try:
-    from modules.pointops.functions.pointops import (
+    from networks.repsurf.modules.pointops.functions.pointops import (
         furthestsampling,
         gathering,
         ballquery,
@@ -16,7 +16,7 @@ try:
         nearestneighbor,
     )
 except:
-    raise Exception("Failed to load pointops")
+    print("Failed to load pointops")
 
 
 def square_distance(src, dst):
@@ -33,7 +33,6 @@ def square_distance(src, dst):
 
 
 def index_points(points, idx, cuda=False, is_group=False):
-    cuda = False
     if cuda:
         if is_group:
             points = grouping(points.transpose(1, 2).contiguous(), idx)
@@ -68,7 +67,6 @@ def farthest_point_sample(xyz, npoint, cuda=False):
     FLOPs:
         S * (3 + 3 + 2)
     """
-    cuda = False
     if cuda:
         if not xyz.is_contiguous():
             xyz = xyz.contiguous()
@@ -90,7 +88,6 @@ def farthest_point_sample(xyz, npoint, cuda=False):
 
 
 def query_ball_point(radius, nsample, xyz, new_xyz, debug=False, cuda=False):
-    cuda = False
     if cuda:
         if not xyz.is_contiguous():
             xyz = xyz.contiguous()
@@ -119,7 +116,6 @@ def query_ball_point(radius, nsample, xyz, new_xyz, debug=False, cuda=False):
 
 
 def query_knn_point(k, xyz, new_xyz, cuda=False):
-    cuda = False
     if cuda:
         if not xyz.is_contiguous():
             xyz = xyz.contiguous()
@@ -132,7 +128,6 @@ def query_knn_point(k, xyz, new_xyz, cuda=False):
 
 
 def sample(nsample, feature, cuda=False):
-    cuda = False
     feature = feature.permute(0, 2, 1)
     xyz = feature[:, :, :3]
 

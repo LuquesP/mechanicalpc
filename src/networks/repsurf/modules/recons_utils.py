@@ -5,14 +5,14 @@ Date: 05/10/2022
 
 import torch
 from torch import nn
-from modules.pointnet2_utils import query_knn_point, index_points
+from networks.repsurf.modules.pointnet2_utils import query_knn_point, index_points
 
 
 def _recons_factory(type):
-    if type == 'knn':
+    if type == "knn":
         return knn_recons
     else:
-        raise Exception('Not Implemented Reconstruction Type')
+        raise Exception("Not Implemented Reconstruction Type")
 
 
 def knn_recons(k, center, context, cuda=False):
@@ -40,14 +40,14 @@ def cal_normal(group_xyz, random_inv=False, is_group=False):
     nor = torch.cross(edge_vec1, edge_vec2, dim=-1)
     unit_nor = nor / torch.norm(nor, dim=-1, keepdim=True)  # [B, N, 3] / [B, N, G, 3]
     if not is_group:
-        pos_mask = (unit_nor[..., 0] > 0).float() * 2. - 1.  # keep x_n positive
+        pos_mask = (unit_nor[..., 0] > 0).float() * 2.0 - 1.0  # keep x_n positive
     else:
-        pos_mask = (unit_nor[..., 0:1, 0] > 0).float() * 2. - 1.
+        pos_mask = (unit_nor[..., 0:1, 0] > 0).float() * 2.0 - 1.0
     unit_nor = unit_nor * pos_mask.unsqueeze(-1)
 
     # batch-wise random inverse normal vector (prob: 0.5)
     if random_inv:
-        random_mask = torch.randint(0, 2, (group_xyz.size(0), 1, 1)).float() * 2. - 1.
+        random_mask = torch.randint(0, 2, (group_xyz.size(0), 1, 1)).float() * 2.0 - 1.0
         random_mask = random_mask.to(unit_nor.device)
         if not is_group:
             unit_nor = unit_nor * random_mask
@@ -69,14 +69,22 @@ def pca(X, k, center=True):
 
     n = X.size()[0]
     ones = torch.ones(n).view([n, 1])
-    h = ((1 / n) * torch.mm(ones, ones.t())) if center else torch.zeros(n * n).view([n, n])
+    h = (
+        ((1 / n) * torch.mm(ones, ones.t()))
+        if center
+        else torch.zeros(n * n).view([n, n])
+    )
     H = torch.eye(n) - h
     X_center = torch.mm(H.double(), X.double())
     u, s, v = torch.svd(X_center)
     components = v[:k].t()
     explained_variance = torch.mul(s[:k], s[:k]) / (n - 1)
-    return {'X': X, 'k': k, 'components': components,
-            'explained_variance': explained_variance}
+    return {
+        "X": X,
+        "k": k,
+        "components": components,
+        "explained_variance": explained_variance,
+    }
 
 
 def cal_center(group_xyz):
@@ -98,10 +106,25 @@ def cal_area(group_xyz):
     :return: [B, N, 1] / [B, N, G, 1]
     """
     pad_shape = group_xyz[..., 0, None].shape
-    det_xy = torch.det(torch.cat([group_xyz[..., 0, None], group_xyz[..., 1, None], torch.ones(pad_shape)], dim=-1))
-    det_yz = torch.det(torch.cat([group_xyz[..., 1, None], group_xyz[..., 2, None], torch.ones(pad_shape)], dim=-1))
-    det_zx = torch.det(torch.cat([group_xyz[..., 2, None], group_xyz[..., 0, None], torch.ones(pad_shape)], dim=-1))
-    area = torch.sqrt(det_xy ** 2 + det_yz ** 2 + det_zx ** 2).unsqueeze(-1)
+    det_xy = torch.det(
+        torch.cat(
+            [group_xyz[..., 0, None], group_xyz[..., 1, None], torch.ones(pad_shape)],
+            dim=-1,
+        )
+    )
+    det_yz = torch.det(
+        torch.cat(
+            [group_xyz[..., 1, None], group_xyz[..., 2, None], torch.ones(pad_shape)],
+            dim=-1,
+        )
+    )
+    det_zx = torch.det(
+        torch.cat(
+            [group_xyz[..., 2, None], group_xyz[..., 0, None], torch.ones(pad_shape)],
+            dim=-1,
+        )
+    )
+    area = torch.sqrt(det_xy**2 + det_yz**2 + det_zx**2).unsqueeze(-1)
     return area
 
 
@@ -185,7 +208,15 @@ class SurfaceConstructor(nn.Module):
         where A^2 + B^2 + C^2 = 1 & A > 0
     """
 
-    def __init__(self, r=None, k=3, recons_type='knn', return_dist=False, random_inv=True, cuda=False):
+    def __init__(
+        self,
+        r=None,
+        k=3,
+        recons_type="knn",
+        return_dist=False,
+        random_inv=True,
+        cuda=False,
+    ):
         super(SurfaceConstructor, self).__init__()
         self.K = k
         self.R = r
@@ -228,8 +259,8 @@ class SurfaceConstructor(nn.Module):
         return normal, center
 
 
-if __name__ == '__main__':
-    xyz = torch.rand(1, 3, 1024) * 2. - 1.
+if __name__ == "__main__":
+    xyz = torch.rand(1, 3, 1024) * 2.0 - 1.0
     constructor = SurfaceConstructor(return_dist=True)
 
     normal, center, pos = constructor(xyz, xyz)

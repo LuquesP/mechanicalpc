@@ -4,17 +4,23 @@ from networks.pointnet.pointnet import PointNetCls, feature_transform_regularize
 from torch.utils.data import DataLoader
 import torch.nn.functional as F
 from dataloader import get_dataset
-from networks.pointnet2.pointnet2_cls_ssg import get_model, get_loss
+
+# from networks.pointnet2.pointnet2_cls_ssg import get_model, get_loss
 from networks.pct.init_model import pct_get_model
 
+from networks.repsurf.models.repsurf.repsurf_ssg_umb import Model as repsurfmodel
+from networks.repsurf.util.utils import repsurf_get_model, repsurf_get_loss
+from networks.repsurf.modules.pointnet2_utils import sample
+from networks.repsurf.util.repsurf_args import get_repsurf_args
 
 dataset_path = r"C:\Users\LukasPilsl\source\studium\bachelor\mechanicalpc\data"
 model_outpath = "mode/"
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(device)
+device = "cpu"
 
-train_annot, train_ds = get_dataset(dataset_path, "train")
-val_annot, val_ds = get_dataset(dataset_path, "test")
+train_annot, train_ds = get_dataset(dataset_path, "train", False)
+val_annot, val_ds = get_dataset(dataset_path, "test", False)
 train_loader = DataLoader(train_ds, batch_size=64, shuffle=True)
 val_loader = DataLoader(val_ds, batch_size=64)
 
@@ -28,8 +34,11 @@ model_name = "pointnet2"
 # model = get_model(len(classes), normal_channel=False)
 # PCT
 model_name = "pct"
-model = pct_get_model()
-
+# model = pct_get_model()
+# surfrep
+repsurfargs = get_repsurf_args()
+model = repsurfmodel(repsurfargs)
+criterion = repsurf_get_loss()
 print(model)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 num_batch = len(train_loader) / 64
@@ -48,11 +57,12 @@ for epoch in range(epochs):
         model = model.train()
         if model_name == "pct":
             pred = model(points)
-        if model_name == "pointnet":
+        elif model_name == "pointnet":
             pred, trans, _ = model(points)
         else:
             pred, trans = model(points)
-        loss = F.nll_loss(pred, target)
+        # loss = F.nll_loss(pred, target)
+        loss = criterion(pred, target)
         loss.backward()
         optimizer.step()
         pred_choice = pred.max(1)[1]

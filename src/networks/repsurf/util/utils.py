@@ -69,12 +69,12 @@ class SmoothClsLoss(nn.Module):
         return loss
 
 
-def get_model(args):
-    module = importlib.import_module("models.%s" % args.model)
+def repsurf_get_model(args):
+    module = importlib.import_module("networks.repsurf.models.repsurf.%s" % args.model)
     return module.Model(args)
 
 
-def get_loss():
+def repsurf_get_loss():
     return SmoothClsLoss()
 
 
