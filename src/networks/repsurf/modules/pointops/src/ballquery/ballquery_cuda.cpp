@@ -33,7 +33,7 @@ void ballquery_cuda_fast(int b, int n, int m, float radius, int nsample, at::Ten
     const float *xyz = xyz_tensor.data<float>();
     int *idx = idx_tensor.data<int>();
 
-    cudaStream_t stream = THCState_getCurrentStream(state);
+    cudaStream_t stream = at::cuda::getCurrentCUDAStream();
 
     ballquery_cuda_launcher_fast(b, n, m, radius, nsample, new_xyz, xyz, idx, stream);
 }
