@@ -40,7 +40,7 @@ void labelstat_ballrange_cuda_fast(int b, int n, int m, float radius, int nclass
     const int *label_stat = label_stat_tensor.data<int>();
     int *new_label_stat = new_label_stat_tensor.data<int>();
 
-    ccudaStream_t stream = at::cuda::getCurrentCUDAStream();
+    cudaStream_t stream = at::cuda::getCurrentCUDAStream();
 
     labelstat_ballrange_cuda_launcher_fast(b, n, m, radius, nclass, new_xyz, xyz, label_stat, new_label_stat, stream);
 }
