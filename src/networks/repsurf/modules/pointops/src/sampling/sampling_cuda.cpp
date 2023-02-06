@@ -1,7 +1,10 @@
 #include <torch/serialize/tensor.h>
 #include <vector>
 #include <ATen/cuda/CUDAContext.h>
-#include <THC/THC.h>
+// #include <THC/THC.h>
+#include <ATen/cuda/CUDAContext.h>
+#include <ATen/cuda/CUDAEvent.h>
+
 #include "sampling_cuda_kernel.h"
 
 extern THCState *state;
