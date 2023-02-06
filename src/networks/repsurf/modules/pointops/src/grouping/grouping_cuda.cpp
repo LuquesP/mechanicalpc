@@ -1,11 +1,13 @@
 #include <torch/serialize/tensor.h>
 #include <ATen/cuda/CUDAContext.h>
 #include <vector>
-#include <THC/THC.h>
+// #include <THC/THC.h>
+#include <ATen/cuda/CUDAContext.h>
+#include <ATen/cuda/CUDAEvent.h>
 
 #include "grouping_cuda_kernel.h"
 
-extern THCState *state;
+// extern THCState *state;
 
 void grouping_forward_cuda(int b, int c, int n, int m, int nsample, at::Tensor points_tensor, at::Tensor idx_tensor, at::Tensor out_tensor)
 {
