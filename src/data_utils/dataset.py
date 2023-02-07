@@ -5,7 +5,7 @@ from torchvision import transforms
 from utils.utils import get_classes
 from data_utils.data_preprocess import DataProcessor
 from data_utils.augmentations import ToTensor, Normalize, RandomNoise, RandRotation_z
-from data_utils.dataloader import Dataloader
+from data_utils.dataloader import Datasetloader
 
 
 class Dataset:
@@ -31,7 +31,7 @@ class Dataset:
         # converts fiels in dataset and returns pytorch dataset
         annotations = self.data_processor.preprocess_dataset()
         classes = get_classes(annotations)
-        data_loader = Dataloader(
+        data_loader = Datasetloader(
             os.path.join(os.getcwd(), "temp"), annotations, classes, augmentations
         )
         return annotations, data_loader
