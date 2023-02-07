@@ -9,7 +9,7 @@ import json
 # from augmentations import Normalize, ToTensor, RandRotation_z, RandomNoise
 
 
-class Dataloader(Dataset):
+class Datasetloader(Dataset):
     def __init__(self, root_dir, annotations, classes, transforms) -> None:
         self.root_dir = root_dir
         self.annotations = annotations
@@ -26,13 +26,13 @@ class Dataloader(Dataset):
 
     def __getitem__(self, idx):
         pc_path = os.path.join(
-            self.root_dir, "files", self.annotations[idx]["filename"] + ".npy"
+            self.root_dir, self.annotations[str(idx)]["filename"] + ".npy"
         )
         pc = self.__preproc__(pc_path)
         return {
             "pointcloud": pc,
             "category": torch.from_numpy(
-                np.array(self.classes[self.annotations[idx]["annotation"]]).astype(
+                np.array(self.classes[self.annotations[str(idx)]["annotation"]]).astype(
                     np.int64
                 )
             ),
